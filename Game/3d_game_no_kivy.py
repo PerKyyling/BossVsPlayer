@@ -2,7 +2,11 @@ import astar_lib
 import pygame
 import math
 import sys
+from random import *
+
 from drivers import GamepadDriver
+
+from algor import *
 
 gamepad = GamepadDriver()
 
@@ -14,7 +18,7 @@ FPS =  30
 #_______________________Настройки экрана и графики________________________
 
 # ____________________________Настройки лучей_____________________________
-count = 80 # Количество лучей (чем больше, тем выше качество 3D)
+count = 140# Количество лучей (чем больше, тем выше качество 3D)
 arch = 60  # Поле зрения в градусах
 width = 1
 # ____________________________Настройки лучей_____________________________
@@ -23,8 +27,11 @@ flag_zel = True
 
 point_color = (0, 255, 21)
 
-werx_rect_color = (155, 155, 155)
-niz_rect_color = (25, 25, 25)
+werx_rect_color = (50, 55, 70)
+niz_rect_color = (35, 35, 35)
+
+# (155, 155, 155)
+# (25, 25, 25)
 
 # (50, 55, 70)
 # (35, 35, 35)
@@ -50,23 +57,83 @@ boss = []
 pror = 1500
 boss_move_flag = 0
 
+
+
+def gen_map(width = 74, height = 17, pi = 1, pj = 1, bi = 2 , bj = 2):
+    stack = []
+    start_maze_x = 1; start_maze_y = 1
+
+    maze = [[1] * width for _ in range(height)]
+    maze[start_maze_y][start_maze_x] = 0
+
+    stack.append((start_maze_x, start_maze_y))
+    mas = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
+    while stack:
+        cx, cy = stack[-1]
+        nb = []
+
+        for dx, dy in mas:
+            nx, ny = cx + dx, cy + dy
+
+            if (0 < nx < (width - 1)) and (0 < ny < (height - 1)) and maze[ny][nx] == 1:
+                nb.append((nx, ny, dx, dy))
+
+        if nb:
+            nx, ny, dx, dy = choice(nb)
+            maze[cy + dy // 2][cx + dx // 2] = 0
+            maze[ny][nx] = 0
+            stack.append((nx, ny))
+        else:
+            stack.pop()
+
+    maze[1][1] = 'P'
+    maze[height - 2][width - 2] = 'B'
+
+    return maze
+
+def print_maze(maze):
+    new = []
+    for row in maze:
+        # print("".join(['1' if cell == 1 else str(cell) for cell in row]))
+        new.append("".join(['1' if cell == 1 else str(cell) for cell in row]))
+    return new
+
+
+
+width = 74; height = 17; pi = 1; pj = 1;  bi = width - 2; bj = height - 2
+
+map_new = gen_map(width , height, pi, pj, bi, bj)
+
+map = print_maze(map_new)
+
+with open("my_game_map", "w", encoding="utf-8") as file:
+
+    file.write(f"{pi} {pj} {bi} {bj} \n")
+
+
+    for row in map:
+        file.write(row + "\n")
+
+
+
 map = [
     "11111111111111111111111111111111111111111111111111111111111111111111111111",
-    "1.....................1....1............................................B1",
-    "1.....................1....1.............................................1",
-    "1.....................111..1.............................................1",
-    "1...............1111.......1.............................................1",
-    "1...............1..........1.............................................1",
-    "1.............P.1..........1.............................................1",
-    "1...............111111111111.............................................1",
-    "1........................................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
-    "1.........1..............................................................1",
+    "1..................................................1....................B1",
+    "1.....111111111......111111111......111111111......1.....................1",
+    "1.....111111111......111111111......111111111......1.....................1",
+    "1.....111111111......111111111......111111111......1.....................1",
+    "1..................................................1.....................1",
+    "1..................................................1.....................1",
+    "1.......P................................................................1",
+    "1..................................................1.....................1",
+    "1..................................................1.....................1",
+    "1..................................................1.....................1",
+    "1..................................................1.....................1",
+    "1.....111111111......111111111...........11........1.....................1",
+    "1.....111111111......111111111........11111........1.....................1",
+    "1.....111111111......111111111........1111.........1.....................1",
+    "1..................................................1.....................1",
     "11111111111111111111111111111111111111111111111111111111111111111111111111"
 ]
 
@@ -125,7 +192,7 @@ for y_map in range(len(map)):
 
             t_mas.append( ( x_map * mapa, y_map * mapa ) )
 
-print(t_mas)
+#
 # _________________________ ____________________
 
 
@@ -151,7 +218,7 @@ DIST_TO_PROJ_PLANE = (WIDTH / 2) / math.tan(math.radians(arch) / 2)
 SCALE = WIDTH / count
 
 try:
-    boss_img = pygame.image.load('boss1.png').convert_alpha()
+    boss_img = pygame.image.load('photo_5366311489326750229_x.png').convert_alpha()
 except:
     boss_img = pygame.Surface((64, 64))
     boss_img.fill((255, 0, 100))
@@ -166,6 +233,7 @@ old_rast = 0
 
 
 boss_visible = False
+boss_invisible=True
 
 
 #____________________________________________________________________________
@@ -209,15 +277,26 @@ boss_step_index=0
 boss_instruction=""
 # _______________________________________________________________________
 
+try:
+    chat_font = pygame.font.Font("8bitfont.otf", 16)
+except:
+    chat_font = pygame.font.SysFont("Arial", 16)
+
 
 def find_path():
     global boss_step_index, boss_instruction
 
     px, py = int(player.x // mapa), int(player.y // mapa)
     bx, by = int(boss_x // mapa), int(boss_y // mapa)
-    print(py,px,by,bx)
-    boss_path = (astar_lib.astar(map, py, px, by, bx))
-    print(boss_path)
+    # print(py,px,by,bx)
+    boss_path = (to_inst(map, py, px, by, bx)) #==================================================================
+
+
+    # astar_lib.asta
+    # to_inst
+
+
+    # print(boss_path)
 
     boss_instruction = boss_path
     boss_step_index = 0
@@ -230,8 +309,119 @@ boss_target_y = boss_y
 boss_is_walking = False
 
 
+def draw_minimap():
+    # Настройки миникарты
+    MAP_SIZE = 200  # Размер квадрата миникарты в пикселях
+    MAP_X = WIDTH - MAP_SIZE - 20  # Отступ 20px от правого края
+    MAP_Y = 20  # Отступ 20px от верхнего края
+
+    # Создаем отдельную поверхность (холст) для карты с поддержкой прозрачности
+    minimap_surf = pygame.Surface((MAP_SIZE, MAP_SIZE), pygame.SRCALPHA)
+    minimap_surf.fill((30, 30, 30, 200))  # Темный полупрозрачный фон (RGBA)
+
+    # Масштаб: сколько игровых пикселей помещается в 1 пиксель миникарты
+    # (Показывает область примерно 6х6 блоков вокруг игрока)
+    ZOOM = 11.0
+
+    # Центр миникарты на самом холсте
+    half_size = MAP_SIZE // 2
+
+    # 1. Рисуем стены лабиринта, сдвинутые относительно игрока
+    for rect in rect_mas:
+        # Вычисляем позицию стены относительно центра игрока
+        rel_x = half_size + (rect.x - player.centerx) // ZOOM
+        rel_y = half_size + (rect.y - player.centery) // ZOOM
+        rel_w = rect.width // ZOOM
+        rel_h = rect.height // ZOOM
+
+        # Рисуем только те стены, которые попадают в границы квадрата карты
+        wall_rect = pygame.Rect(rel_x, rel_y, rel_w, rel_h)
+        if minimap_surf.get_rect().colliderect(wall_rect):
+            pygame.draw.rect(minimap_surf, (100, 100, 100), wall_rect)
+
+    # 2. Рисуем зелёные квестовые точки
+    for rect in rect_mas1:
+        rel_x = half_size + (rect.centerx - player.centerx) // ZOOM
+        rel_y = half_size + (rect.centery - player.centery) // ZOOM
+        pygame.draw.circle(minimap_surf, point_color, (int(rel_x), int(rel_y)), int(4 // ZOOM))
+
+    # 3. Рисуем Босса (Красный круг)
+    if len(boss) > 0:
+        rel_bx = half_size + (boss_x - player.centerx) // ZOOM
+        rel_by = half_size + (boss_y - player.centery) // ZOOM
+        boss_rect = pygame.Rect(rel_bx - 4, rel_by - 4, 8, 8)
+        if minimap_surf.get_rect().colliderect(boss_rect):
+            pygame.draw.circle(minimap_surf, (255, 0, 0), (int(rel_bx), int(rel_by)), 5)
+
+    # 4. Рисуем игрока строго по центру холста (Желтый круг)
+    pygame.draw.circle(minimap_surf, (255, 235, 59), (half_size, half_size), 4)
+
+    # 5. Рисуем линию взгляда (куда смотрит игрок)
+    line_end_x = half_size + math.cos(ang) * 15
+    line_end_y = half_size + math.sin(ang) * 15
+    pygame.draw.line(minimap_surf, (255, 235, 59), (half_size, half_size), (line_end_x, line_end_y), 2)
+
+    # Рисуем аккуратную рамку вокруг миникарты
+    pygame.draw.rect(minimap_surf, (255, 255, 255), (0, 0, MAP_SIZE, MAP_SIZE), 2)
+
+    # Выводим готовую миникарту на основной экран игры
+    screen.blit(minimap_surf, (MAP_X, MAP_Y))
 
 
+def chat_cons(current_move, sg, boss_visible, obn):
+    chat_x = 200
+    chat_y = 400
+
+    otst_x = WIDTH - 220
+    otst_y = 240
+
+    chat_cons_surf = pygame.Surface((chat_x, chat_y), pygame.SRCALPHA)
+    chat_cons_surf.fill((128, 128, 128, 100))
+
+
+    text_line1 = chat_font.render("        BOSS      ", True, (255, 255, 255))
+
+    text_line2 = chat_font.render(f"st {current_move}", True, (255, 255, 255))
+
+    text_line3 = chat_font.render(f"stc {sg}", True, (255, 255, 255))
+
+
+    if boss_visible:
+        text_line4_1 = chat_font.render(f"bsv", True, (255, 255, 255))
+        text_line4 = chat_font.render(f" {boss_visible}", True, (0, 220, 128))
+    else:
+        text_line4_1 = chat_font.render(f"bsv", True, (255, 255, 255))
+        text_line4 = chat_font.render(f"{boss_visible}", True, (200, 20, 60))
+
+
+
+    if obn:
+        text_line5_1 = chat_font.render(f"upd", True, (255, 255, 255))
+        text_line5 = chat_font.render(f"{bool(obn)}", True, (0, 220, 128))
+    else:
+        text_line5_1 = chat_font.render(f"upd", True, (255, 255, 255))
+        text_line5 = chat_font.render(f"{bool(obn)}", True, (200, 20, 60))
+
+
+    chat_cons_surf.blit(text_line1, (10, 15))
+    chat_cons_surf.blit(text_line2, (10, 55))
+    chat_cons_surf.blit(text_line3, (10, 95))
+
+
+
+    chat_cons_surf.blit(text_line4_1, (10, 135))
+    chat_cons_surf.blit(text_line4, (90, 135))
+
+
+
+    chat_cons_surf.blit(text_line5_1, (10, 175))
+    chat_cons_surf.blit(text_line5, (90, 175))
+
+
+    screen.blit(chat_cons_surf, (otst_x, otst_y))
+
+flag_for_event = 0
+count_event = 0
 
 while running:
 
@@ -250,6 +440,8 @@ while running:
         if event.type == POLL_EVENT:
             print("recalc path")
             find_path()
+
+            flag_for_event = 1
 
     timer += 1
 
@@ -320,7 +512,7 @@ while running:
         if timer >= FPS:
             timer = 0
             if rast <= mapa:
-                print('андрей лоооох')
+
                 # Создаем быстрый экран смерти прямо в Pygame
                 try:
                     font = pygame.font.Font("8bitfont.otf", 60)
@@ -354,6 +546,8 @@ while running:
 
 
         if boss_visible:
+            if boss_invisible:
+                boss_invisible=False
 
             if rast > 10 and boss_move_flag == 1:
                 boss_x += (boss_dx / rast) * boss_speed
@@ -362,12 +556,19 @@ while running:
                 boss_target_x, boss_target_y = boss_x, boss_y
                 boss_is_walking = False
         else:
+            if not boss_invisible:
+                boss_invisible=True
+                find_path()
+
             if not boss_is_walking:
                 if boss_action_timer % 150 == 0:
 
                     if boss_step_index < len(boss_instruction):
                         current_move = boss_instruction[boss_step_index]
-                        print(f"Босс выполняет шаг {boss_step_index + 1}/{len(boss_instruction)}: {current_move}")
+                        # print(f"Босс выполняет шаг {boss_step_index + 1}/{len(boss_instruction)}: {current_move}")
+
+                        sg = str(boss_step_index + 1) + ' of ' + str(len(boss_instruction))
+
                         if current_move == 'U':
                             boss_target_x, boss_target_y = boss_UP(boss_x, boss_y)
                         elif current_move == 'D':
@@ -381,7 +582,7 @@ while running:
                         boss_step_index += 1
                     else:
 
-                        print("ended instruction, recalc")
+                        # print("ended instruction, recalc")
                         find_path()
             else:
                 move_dx = boss_target_x - boss_x
@@ -451,7 +652,7 @@ while running:
 
                     player_tile = t_mas[wall] # переменная игрока
 
-                    print('тайл игрока:', player_tile)
+                    # print('тайл игрока:', player_tile)
 
                 old_pl_pos = t_mas[wall]
 
@@ -469,7 +670,7 @@ while running:
 
                     boss_tile = t_mas[wall] # переменная босса
 
-                    print('тайл босса:', boss_tile)
+                    # print('тайл босса:', boss_tile)
 
                 old_bs_pos = t_mas[wall]
 
@@ -590,6 +791,15 @@ while running:
 
             scaled_boss = pygame.transform.scale(boss_img, (boss_size, boss_size))
             screen.blit(scaled_boss, (left_x, boss_screen_y))
+
+    chat_cons(current_move, sg, boss_visible, flag_for_event)
+    draw_minimap()
+
+    if count_event == 100:
+        flag_for_event = 0
+        count_event = 0
+
+    count_event += 1
 
     pygame.display.flip()
     clock.tick(FPS)
