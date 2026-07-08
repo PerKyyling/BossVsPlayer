@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <unordered_map>
 
 using namespace std;
 
@@ -31,26 +30,14 @@ class  astar_lib{
         string astar();
         void read_from_file(const string& filename);
         int get_height();
-
+        string dijkstra();
     private:
-
-        vector<string> vect; // 1 - wall (. P B) - можно ходить
-        int py /* str */, px /* column */, by, bx, height;
+        vector<string>vect;
+        int py,px,by,bx,height;
 
         int manhattan(int ny,int nx, int fy, int fx){
             return abs(ny-fy)+abs(nx-fx);
 }
-};
-// класс для реализации BFS
-class Bfs {
-    public:
-        void read_from_file(const string& filename); // просто копипаст из astar
-        std::vector<std::vector<int>> bfs(); // функция для нахождения маршрута на bfs, возвращает список из i/j элементов
-        int py, px, by, bx, height;
-
-    private:
-        std::unordered_map<std::string, std::string> map_; // мапа для предков
-        vector<string> vect_; // вектор для храния i/j элементов игры
 };
 
 

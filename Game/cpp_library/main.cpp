@@ -1,7 +1,23 @@
-#include "astar.hpp"
-//#include <pybind11/pybind11.h>
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <string>
+#include <cmath>
+#include <map>
+#include <algorithm>
+#include <pybind11/pybind11.h>
 
-//namespace py = pybind11;
+namespace py = pybind11;
+using namespace std;
+const int INF = 1e9;
+
+struct cell{
+    bool isWall=false;
+    int heuristics;
+    int dist=INF;
+    int y; int x;
+};
+
 
 struct cmpCell{
     bool operator()(cell c1, cell c2){
@@ -9,19 +25,8 @@ struct cmpCell{
     }
 };
 
-
-
-void astar_lib::read_from_file(const string& filename){
-    vect.clear();
-    ifstream input(filename);
-    input>>py>>px>>by>>bx>>height;
-
-    for (int i=0;i<height;++i){
-        string t_string;
-        input>>t_string;
-        vect.push_back(t_string);
-    }
-
+int manhattan(int ny,int nx, int fy, int fx){
+    return abs(ny-fy)+abs(nx-fx);
 }
 
 
@@ -34,10 +39,11 @@ bool operator>(cell c1, cell c2){
 }
 */
 
-string astar_lib::astar(){
-    /*for (auto item : py_vect) {
+string astar(py::list py_vect, int py, int px, int by, int bx){
+    vector<string> vect;
+    for (auto item : py_vect) {
         vect.push_back(item.cast<string>());
-    }*/
+    }
 
     int height = vect.size();
     int width = vect[0].size();
@@ -113,12 +119,6 @@ string astar_lib::astar(){
     return ans;
 }
 
-int astar_lib::get_height(){
-    return height;
-}
-
-
-
 /*
 int main(){
     vector<string> v={
@@ -129,7 +129,8 @@ int main(){
     };
     cout<<astar(v,1,1,2,4);
 }*/
-/*PYBIND11_MODULE(astar_lib, m) {
+
+PYBIND11_MODULE(astar_lib, m) {
     m.doc() = "a* path finding function";
     m.def("astar", &astar, "for game");
-}*/
+}

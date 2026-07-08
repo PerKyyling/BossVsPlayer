@@ -1,7 +1,21 @@
-#include "astar.hpp"
-//#include <pybind11/pybind11.h>
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <string>
+#include <cmath>
+#include <map>
+#include <algorithm>
+#include <pybind11/pybind11.h>
+using namespace std;
+const int INF = 1e9;
 
-//namespace py = pybind11;
+struct cell{
+    bool isWall=false;
+    int heuristics;
+    int dist=INF;
+    int y; int x;
+};
+
 
 struct cmpCell{
     bool operator()(cell c1, cell c2){
@@ -9,19 +23,8 @@ struct cmpCell{
     }
 };
 
-
-
-void astar_lib::read_from_file(const string& filename){
-    vect.clear();
-    ifstream input(filename);
-    input>>py>>px>>by>>bx>>height;
-
-    for (int i=0;i<height;++i){
-        string t_string;
-        input>>t_string;
-        vect.push_back(t_string);
-    }
-
+int manhattan(int ny,int nx, int fy, int fx){
+    return abs(ny-fy)+abs(nx-fx);
 }
 
 
@@ -34,20 +37,9 @@ bool operator>(cell c1, cell c2){
 }
 */
 
-string astar_lib::astar(){
-    /*for (auto item : py_vect) {
-        vect.push_back(item.cast<string>());
-    }*/
-
+string astar(vector<string> vect, int py, int px, int by, int bx){
     int height = vect.size();
     int width = vect[0].size();
-
-
-    if (py < 0 || py >= height || px < 0 || px >= width || 
-        by < 0 || by >= height || bx < 0 || bx >= width) {
-        return "";
-    }
-
     pair<int, int> moves[4]={{1,0},{0,1},{-1,0},{0,-1}};
     char direction[4]={'D','R','U','L'};
 
@@ -80,30 +72,23 @@ string astar_lib::astar(){
         for (int i=0;i<4&&flag;++i){
             int ty=moves[i].first+cy;
             int tx=moves[i].second+cx;
-            if (ty >= 0 && ty < height && tx >= 0 && tx < width){
-                if (!mp[ty][tx].isWall){
-                    if (mp[ty][tx].dist>cd+1){
-                        mp[ty][tx].dist=cd+1;
-                        parent[ty][tx]=direction[i];
 
-                        if (ty==py &&tx==px){flag=false; break;}
+            if (!mp[ty][tx].isWall){
+                if (mp[ty][tx].dist>cd+1){
+                    mp[ty][tx].dist=cd+1;
+                    parent[ty][tx]=direction[i];
 
-                        pq.push(mp[ty][tx]);
-                    }
+                    if (ty==py &&tx==px){flag=false; break;}
+
+                    pq.push(mp[ty][tx]);
                 }
             }
         }
     }
-
-    if (parent[py][px] == 'N') {
-        return "";
-    }
-
     string ans="";
     map<char, pair<int,int>> bck={{'R',{0,-1}}, {'L',{0,1}}, {'U',{1,0}},{'D',{-1,0}}};
     int cuy=py; int cux=px;
     while (cuy!=by||cux!=bx){
-        if (parent[cuy][cux] == 'N') break;
         ans.push_back(parent[cuy][cux]);
         pair<int,int> dir=bck[parent[cuy][cux]];
         cuy+=dir.first;
@@ -113,13 +98,6 @@ string astar_lib::astar(){
     return ans;
 }
 
-int astar_lib::get_height(){
-    return height;
-}
-
-
-
-/*
 int main(){
     vector<string> v={
         "111111",
@@ -128,8 +106,4 @@ int main(){
         "111111"
     };
     cout<<astar(v,1,1,2,4);
-}*/
-/*PYBIND11_MODULE(astar_lib, m) {
-    m.doc() = "a* path finding function";
-    m.def("astar", &astar, "for game");
-}*/
+}

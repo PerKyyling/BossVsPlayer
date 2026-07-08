@@ -3,20 +3,23 @@
 #include <fstream>
 #include <chrono>
 #include <string>
-const int NUMTR=5;
+const int NUMTR=25;
 
 using clocks = std::chrono::high_resolution_clock;
 using nanoseconds = std::chrono::nanoseconds;
 using namespace std;
 
 
-
-int main(){
-    ofstream out("C:\\c++\\hse\\A-star\\astar.csv");
-    out<<"Height"<<";1"<<";2"<<";3"<<";4"<<";5"<<endl;
-    for (int i=0;i<100;++i){
+void astar_time_test_dsu(){
+    ofstream out("C:\\c++\\hse\\A-star\\astar_2000_dsu.csv");
+    out<<"Height";
+    for (int i=1;i<=NUMTR;++i){
+        out<<";"<<to_string(i);
+    }
+    out<<endl;
+    for (int i=0;i<2000;i++){
         astar_lib astr;
-        astr.read_from_file("C:\\c++\\hse\\A-star\\tests\\"+to_string(i));
+        astr.read_from_file("C:\\c++\\hse\\A-star\\labgen\\tests_dsu\\"+to_string(i));
         int height=astr.get_height();
         out<<height;
         for (int j=0;j<NUMTR;++j){
@@ -28,4 +31,9 @@ int main(){
         }
         out<<endl;
     }
+}
+
+
+int main(){
+    astar_time_test_dsu();
 }
