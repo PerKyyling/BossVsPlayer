@@ -10,6 +10,8 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <unordered_set>
+#include <sstream>
 
 using namespace std;
 
@@ -45,13 +47,17 @@ class  astar_lib{
 class Bfs {
     public:
         void read_from_file(const string& filename); // просто копипаст из astar
-        std::vector<std::vector<int>> bfs(); // функция для нахождения маршрута на bfs, возвращает список из i/j элементов
-        int py, px, by, bx, height;
+        std::string bfs(); // функция для нахождения маршрута на bfs, возвращает инструкцию {R/L/U/D}
+        int py, px, by, bx, is_do, height;
 
     private:
-        std::unordered_map<std::string, std::string> map_; // мапа для предков
-        vector<string> vect_; // вектор для храния i/j элементов игры
+        std::vector<std::string> vect_;
+        std::unordered_set<std::string> vectIsVisited_; // список для проверки посещенных координат
+        std::queue<std::vector<int>> vector_; // список вершин графа
+        std::unordered_map<std::string, 
+        std::vector<std::vector<int>>> map_; // мапа для предков
+        std::vector<std::vector<int>> normalVector_; // я задолбался..
+        void createNormalVector();
+        bool bl_ = true;
 };
-
-
 #endif
